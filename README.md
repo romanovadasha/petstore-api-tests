@@ -11,6 +11,8 @@ This project demonstrates API test automation for Petstore service, including:
 - Data modeling and test data generation
 - Layered test architecture
 
+  Includes both positive and negative test scenarios for API validation.
+
 ## Tech Stack
 
 - Java
