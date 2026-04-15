@@ -27,7 +27,6 @@ public class PetTests extends BaseTest {
 
     private PetService petService = new PetService();
 
-    private PetClient petClient = new PetClient();
 
     @Test
     void shouldCreatePet() {
@@ -123,10 +122,33 @@ public class PetTests extends BaseTest {
 
     } // Тут есть баг
 
+    @Test
+    void shouldCreatePetWithValidData(){
+
+        // Arrange
+        Pet pet = PetBuilder.validPet();
+
+        // Act
+        Pet created = petService.createPet(pet);
+
+        // + Act
+        Pet fetched = petService.getPetById(created.id);
+
+        // Asserts
+        assertNotNull(created.id);
+
+        assertEquals(pet.name, created.name);
+        assertEquals(pet.status, created.status);
+
+        assertEquals(pet.name, fetched.name);
+        assertEquals(pet.status, fetched.status);
+
+    }
+
     @AfterEach
     void cleanup() {
         for (Long id : createdPetIds) {
-            petClient.deletePet(id);
+            petService.deletePet(id);
         }
         createdPetIds.clear();
     }

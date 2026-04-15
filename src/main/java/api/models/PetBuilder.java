@@ -6,6 +6,13 @@ public class PetBuilder {
     private String name = "Barsik";
     private String status = "available";
 
+    public static Pet validPet() {
+        return new PetBuilder()
+                .withName("Boo")
+                .withStatus("available")
+                .build();
+    }
+
     public PetBuilder withId(long id) {
         this.id = id;
         return this;

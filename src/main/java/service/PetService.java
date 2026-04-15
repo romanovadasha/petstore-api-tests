@@ -32,7 +32,16 @@ public class PetService {
 
     public Pet getPetById(long id){
         return petClient.getPet(id)
+                .then()
+                .statusCode(200)
+                .extract()
                 .as(Pet.class);
+    }
+
+    public void deletePet(Long id){
+        petClient.deletePet(id)
+                .then()
+                .statusCode(200);
     }
 
 }
