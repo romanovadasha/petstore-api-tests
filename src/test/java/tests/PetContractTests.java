@@ -46,4 +46,34 @@ public class PetContractTests extends BaseTest {
                 .statusCode(200)
                 .body("name", notNullValue());
     }
+
+    @Test
+    void shouldHandleNullName(){
+
+        //Arrange
+        Pet pet = new PetBuilder()
+                .withName(null)
+                .build();
+
+        //Act + Asserts
+        petClient.createPet(pet)
+                .then()
+                .statusCode(200)
+                .body("$", not(hasKey("name")));
+    }
+
+    @Test
+    void shouldHandleMissingName(){
+
+        //Arrange
+        Pet pet = new PetBuilder()
+                .withoutName()
+                .build();
+
+        //Act + Assert
+        petClient.createPet(pet)
+                .then()
+                .statusCode(200)
+                .body("$", not(hasKey("name")));
+    }
 }

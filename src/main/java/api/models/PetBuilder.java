@@ -1,5 +1,7 @@
 package api.models;
 
+import java.net.http.HttpResponse;
+
 public class PetBuilder {
 
     private long id = System.currentTimeMillis();
@@ -28,11 +30,21 @@ public class PetBuilder {
         return this;
     }
 
+    public PetBuilder withoutName(){
+        this.name = null;
+        return this;
+    }
+
     public Pet build() {
         Pet pet = new Pet();
         pet.id = this.id;
-        pet.name = this.name;
+        //pet.name = this.name;
+        if (this.name != null) {
+            pet.name = this.name;
+        }
         pet.status = this.status;
         return pet;
     }
+
+
 }
