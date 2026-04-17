@@ -32,4 +32,11 @@ public class PetClient {
                 .delete("/pet/" + petId);
     }
 
+    public Response updatePet(Pet pet){
+        return given()
+                .spec(RequestSpec.requestSpec)
+                .body(pet)
+                .put("/pet");
+    }
+
 }
