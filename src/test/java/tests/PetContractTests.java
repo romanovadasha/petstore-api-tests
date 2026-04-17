@@ -6,6 +6,7 @@ import api.PetClient;
 import api.models.PetBuilder;
 
 import config.RequestSpec;
+import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.Test;
 
@@ -201,7 +202,7 @@ public class PetContractTests extends BaseTest {
         //Assert
         response.then()
                 .statusCode(400)
-                .body("$", hasKey("messege"))
+                .body("$", hasKey("message"))
                 .body("message", equalTo("bad input"));
 
     }
@@ -258,5 +259,38 @@ public class PetContractTests extends BaseTest {
                 .statusCode(200)
                 .body("id", equalTo(id))
                 .body("name", equalTo("lola"));
+    }
+
+    @Test
+    void shouldCreatePetWhenUpdatingNonExistingId(){
+
+        //Arrange
+        Pet originalPet = new PetBuilder()
+                .withId(88888888888888L)
+                .withName("doggie")
+                .build();
+
+        //Act
+        given()
+                .spec(RequestSpec.requestSpec)
+                .body(originalPet)
+                .when()
+                .put("/pet")
+                .then()
+                .statusCode(200)
+                .body("id", equalTo(88888888888888L))
+                .body("name", equalTo("doggie"))
+                .body("status", equalTo("available"))
+                .log().body();
+
+        given()
+                .spec(RequestSpec.requestSpec)
+                .when()
+                .get("/pet/{id}", 88888888888888L)
+                .then()
+                .statusCode(200)
+                .body("id", equalTo(88888888888888L))
+                .body("name", equalTo("doggie"))
+                .body("status", equalTo("available"));
     }
 }
