@@ -10,8 +10,11 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class PetContractTests extends BaseTest {
@@ -283,6 +286,7 @@ public class PetContractTests extends BaseTest {
                 .body("status", equalTo("available"))
                 .log().body();
 
+        //Assert
         given()
                 .spec(RequestSpec.requestSpec)
                 .when()
@@ -292,5 +296,92 @@ public class PetContractTests extends BaseTest {
                 .body("id", equalTo(88888888888888L))
                 .body("name", equalTo("doggie"))
                 .body("status", equalTo("available"));
+    }
+
+    @Test
+    void shouldUpdatePetWhenPuttingSameIdTwice(){
+
+        //Arrange
+        Pet originalPet = new PetBuilder()
+                .withId(7777777777L)
+                .withName("doggie")
+                .build();
+
+        //Act
+        given()
+                .spec(RequestSpec.requestSpec)
+                .body(originalPet)
+                .when()
+                .put("/pet")
+                .then()
+                .statusCode(200)
+                .body("id", equalTo(7777777777L))
+                .body("name", equalTo("doggie"))
+                .body("status", equalTo("available"))
+                .log().body();
+
+        Pet updatePet = new PetBuilder()
+                .withId(7777777777L)
+                .withName("lola")
+                .build();
+
+        given()
+                .spec(RequestSpec.requestSpec)
+                .body(updatePet)
+                .when()
+                .put("/pet")
+                .then()
+                .statusCode(200)
+                .body("id", equalTo(7777777777L))
+                .body("name", equalTo("lola"))
+                .body("status", equalTo("available"))
+                .log().body();
+
+        given()
+                .spec(RequestSpec.requestSpec)
+                .when()
+                .get("/pet/{id}", 7777777777L)
+                .then()
+                .statusCode(200)
+                .body("id", equalTo(7777777777L))
+                .body("name", equalTo("lola"))
+                .body("status", equalTo("available"));
+    }
+
+    @Test
+    void shouldOverrideExistingFieldsWhenPuttingPartialPetData(){
+
+        Pet originalPet = new PetBuilder()
+                .withId(666666666L)
+                .withName("doggie")
+                .withStatus("sold")
+                .withPhotoUrls(List.of("photo1"))
+                .build();
+
+        Pet updatePet = new PetBuilder()
+                .withId(666666666L)
+                .withName("lola")
+                .withStatus(null)
+                .build();
+
+        given()
+                .spec(RequestSpec.requestSpec)
+                .body(updatePet)
+                .when()
+                .put("/pet")
+                .then()
+                .statusCode(200);
+
+        given()
+                .spec(RequestSpec.requestSpec)
+                .when()
+                .get("/pet/{id}", 666666666L)
+                .then()
+                .statusCode(200)
+                .body("id", equalTo("lola"))
+                .body("$", not(hasKey("status")))
+                .body("$", not(hasKey("photoUrls")));
+
+        // Reproduces JIRA-1234: partial PUT causes data loss
     }
 }

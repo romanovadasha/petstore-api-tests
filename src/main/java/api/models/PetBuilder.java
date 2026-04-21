@@ -1,12 +1,14 @@
 package api.models;
 
 import java.net.http.HttpResponse;
+import java.util.List;
 
 public class PetBuilder {
 
     private long id = System.currentTimeMillis();
     private String name = "Barsik";
     private String status = "available";
+    private List<String> photoUrls;
 
     public static Pet validPet() {
         return new PetBuilder()
@@ -30,6 +32,11 @@ public class PetBuilder {
         return this;
     }
 
+    public PetBuilder withPhotoUrls(List<String> photoUrls) {
+        this.photoUrls = photoUrls;
+        return this;
+    }
+
     public PetBuilder withoutName(){
         this.name = null;
         return this;
@@ -43,6 +50,7 @@ public class PetBuilder {
             pet.name = this.name;
         }
         pet.status = this.status;
+        pet.photoUrls = this.photoUrls;
         return pet;
     }
 
