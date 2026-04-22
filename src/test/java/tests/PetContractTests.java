@@ -282,4 +282,65 @@ public class PetContractTests extends BaseTest {
 
         // Reproduces JIRA-1234: partial PUT causes data loss
     }
+
+    @Test
+    void shouldUpdateNameKeepStatusAndRemovePhotoUrlsWhenApplyingMixedPut(){
+
+        long id = System.currentTimeMillis();
+
+        Pet initialPet = new PetBuilder()
+                .withId(id)
+                .withName("Barsik")
+                .withStatus("available")
+                .withPhotoUrls(List.of("url1"))
+                .build();
+
+        Pet createdPet = petClient.createPet(initialPet);
+
+        Pet updatedPet = new PetBuilder()
+                .withId(id)
+                .withName("lola")
+                .withPhotoUrls(null)
+                .build();
+
+        petClient.updatePet(updatedPet);
+
+        Pet fetchedPet = petClient.getPet(id);
+
+        assertThat(fetchedPet.getName(), equalTo("lola"));
+        assertThat(fetchedPet.getStatus(), equalTo("available"));
+        assertThat(fetchedPet.getPhotoUrls(), nullValue());
+        assertThat(fetchedPet.getId(), equalTo(id));
+    }
+
+    @Test
+    void shouldKeepNameRemoveStatusAndUpdatePhotoUrlsWhenApplyingMixedPut(){
+
+        long id = System.currentTimeMillis();
+
+        Pet initialPet = new PetBuilder()
+                .withId(id)
+                .withName("Barsik")
+                .withStatus("available")
+                .withPhotoUrls(List.of("url2"))
+                .build();
+
+        Pet createdPet = petClient.createPet(initialPet);
+
+        Pet updatedPet = new PetBuilder()
+                .withId(id)
+                .withStatus(null)
+                .withPhotoUrls(List.of("url3"))
+                .build();
+
+        petClient.updatePet(updatedPet);
+
+        Pet fetchedPet = petClient.getPet(id);
+
+        assertThat(fetchedPet.getName(), nullValue());
+        assertThat(fetchedPet.getStatus(), nullValue());
+        assertThat(fetchedPet.getPhotoUrls(), equalTo(List.of("url3")));
+        assertThat(fetchedPet.getId(), equalTo(id));
+
+    }
 }
