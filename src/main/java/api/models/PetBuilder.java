@@ -5,16 +5,16 @@ import java.util.List;
 
 public class PetBuilder {
 
-    private long id = System.currentTimeMillis();
-    private String name = "Barsik";
+    private Long id;
+    private String name;
     private String status = "available";
     private List<String> photoUrls;
+    private boolean isNameSet = false;
 
-    public static Pet validPet() {
+    public static PetBuilder validPet() {
         return new PetBuilder()
                 .withName("Boo")
-                .withStatus("available")
-                .build();
+                .withStatus("available");
     }
 
     public PetBuilder withId(long id) {
@@ -23,6 +23,7 @@ public class PetBuilder {
     }
 
     public PetBuilder withName(String name) {
+        this.isNameSet = true;
         this.name = name;
         return this;
     }
@@ -38,21 +39,31 @@ public class PetBuilder {
     }
 
     public PetBuilder withoutName(){
+        this.isNameSet = false;
         this.name = null;
         return this;
     }
 
     public Pet build() {
+
         Pet pet = new Pet();
-        pet.id = this.id;
+
+        //pet.id = this.id;
+
+        if (id != null){
+            pet.id = id;
+        }
+
         //pet.name = this.name;
-        if (this.name != null) {
+
+        if (isNameSet){
             pet.name = this.name;
         }
+
         pet.status = this.status;
         pet.photoUrls = this.photoUrls;
+
         return pet;
     }
-
 
 }

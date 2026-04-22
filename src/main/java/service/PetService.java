@@ -24,18 +24,11 @@ public class PetService {
     }
 
     public Pet createPet(Pet pet){
-        return petClient.createPet(pet)
-                .then()
-                .extract()
-                .as(Pet.class);
+        return petClient.createPet(pet);
     }
 
     public Pet getPetById(long id){
-        return petClient.getPet(id)
-                .then()
-                .statusCode(200)
-                .extract()
-                .as(Pet.class);
+        return petClient.getPet(id);
     }
 
     public void deletePet(Long id){

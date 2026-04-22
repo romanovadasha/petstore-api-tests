@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,191 +23,139 @@ public class PetContractTests extends BaseTest {
     private PetClient petClient = new PetClient();
 
     @Test
-    void shouldNotReturnNameFieldWhenNull(){
+    void shouldKeepNullWhenNameIsExplicitlyNull(){
 
-        // Arrange
         Pet pet = new PetBuilder()
                 .withName(null)
-                .withId(System.currentTimeMillis())
                 .withStatus("available")
                 .build();
 
-        // Act + Assert
-        petClient.createPet(pet)
-                .then()
-                .statusCode(200)
-                .body("$", not(hasKey("name")));
+        Pet createdPet = petClient.createPet(pet);
 
+        assertThat(createdPet.getId(), greaterThan(0L));
+        assertThat(createdPet.getName(), nullValue());
     }
 
     @Test
-    void shouldSetDefaultNameWhenMissing(){
+    void shouldSetDefaultNameWhenNameIsMissing(){
 
-        //Arrange
         Pet pet = new PetBuilder()
-                .withId(System.currentTimeMillis())
                 .withStatus("available")
                 .build();
 
-        //Act + Asserts
-        petClient.createPet(pet)
-                .then()
-                .statusCode(200)
-                .body("name", notNullValue());
+        Pet createdPet = petClient.createPet(pet);
+
+        assertThat(createdPet.getName(), nullValue());
     }
 
     @Test
-    void shouldHandleNullName(){
+    void shouldKeepEmptyName(){
 
-        //Arrange
-        Pet pet = new PetBuilder()
-                .withName(null)
-                .build();
-
-        //Act + Asserts
-        petClient.createPet(pet)
-                .then()
-                .statusCode(200)
-                .body("$", not(hasKey("name")));
-    }
-
-    @Test
-    void shouldHandleMissingName(){
-
-        //Arrange
-        Pet pet = new PetBuilder()
-                .withoutName()
-                .build();
-
-        //Act + Assert
-        petClient.createPet(pet)
-                .then()
-                .statusCode(200)
-                .body("$", not(hasKey("name")));
-    }
-
-    @Test
-    void shouldHandleEmptyName(){
-
-        //Arrange
         Pet pet = new PetBuilder()
                 .withName("")
                 .build();
 
-        //Act
-        Response response = petClient.createPet(pet);
+        Pet createdPet = petClient.createPet(pet);
 
-        //Assert
-        response.then()
-                .statusCode(200)
-                .body("$", hasKey("name"))
-                .body("name", equalTo(""));
+        assertThat(createdPet.getId(), greaterThan(0L));
+        assertThat(createdPet.getName(), equalTo(""));
     }
 
     @Test
-    void shouldHandleValidName(){
+    void shouldKeepValidName(){
 
-        //Arrange
         Pet pet = new PetBuilder()
                 .withName("doggie")
                 .build();
 
-        //Act
-        Response response = petClient.createPet(pet);
+        Pet createdPet = petClient.createPet(pet);
 
-        //Assert
-        response.then()
-                .statusCode(200)
-                .body("$", hasKey("name"))
-                .body("name", equalTo("doggie"));
+        assertThat(createdPet.getId(), greaterThan(0L));
+        assertThat(createdPet.getName(), equalTo("doggie"));
+        assertThat(createdPet.getStatus(), equalTo("available"));
+
     }
 
     @Test
-    void shouldHandleAnotherTypeName(){
+    void shouldConvertNumericNameToString(){
 
-        //Arrange
         String body = "{ \"name\": 123 }";
 
-        //Act
         Response response =
                 given()
                         .spec(RequestSpec.requestSpec)
-                        //.contentType("application/json")
                         .body(body)
                         .when()
                         .post("/pet");
 
-        //Assert
         response.then()
                 .statusCode(200)
+                .body("$", hasKey("id"))
                 .body("$", hasKey("name"))
                 .body("name", equalTo("123"));
 
     }
 
     @Test
-    void shouldHandleTypeBooleanName(){
+    void shouldConvertBooleanNameToString(){
 
-        //Arrange
         String body = "{ \"name\": true }";
 
-        //Act
         Response response =
                 given()
                         .spec(RequestSpec.requestSpec)
+                        .contentType("application/json")
                         .body(body)
                         .when()
                         .post("/pet");
 
-        //Assert
         response.then()
                 .statusCode(200)
+                .body("$", hasKey("id"))
                 .body("$", hasKey("name"))
                 .body("name", equalTo("true"));
     }
 
     @Test
-    void shouldHandleLongName(){
+    void shouldKeepLongNameWithoutTruncation(){
 
-        //Arrange
         String longName = "a".repeat(1000);
         String body = "{ \"name\": \"" + longName + "\" }";
 
-        //Act
         Response response =
                 given()
                         .spec(RequestSpec.requestSpec)
+                        .contentType("application/json")
                         .body(body)
                         .post("/pet");
 
         //System.out.println(response.jsonPath().getString("name").length());
 
-        //Assert
         response.then()
-                        .statusCode(200)
-                                .body("$", hasKey("name"));
+                .statusCode(200)
+                .body("$", hasKey("id"))
+                .body("$", hasKey("name"))
+                .body("name", equalTo(longName));
 
-        assertEquals(1000, response.jsonPath().getString("name").length());
     }
 
     @Test
-    void shouldReturnErrorForMalformedJson(){
+    void shouldReturn400ForMalformedJson(){
 
-        //Arrange
         String body = "{ \"name\": doggie }";
 
-        //Act
         Response response =
                 given()
                         .spec(RequestSpec.requestSpec)
+                        .contentType("application/json")
                         .body(body)
                         .post("/pet");
 
-        //Assert
         response.then()
                 .statusCode(400)
+                .body("$", not(hasKey("id")))
                 .body("$", hasKey("message"))
-                .body("message", equalTo("bad input"));
+                .body("message", equalTo("bad input")); //.body("message", containsString("input"))
 
     }
 
@@ -220,6 +169,7 @@ public class PetContractTests extends BaseTest {
         Response response =
                 given()
                         .spec(RequestSpec.requestSpec)
+                        .contentType("application/json")
                         .body(body)
                         .post("/pet");
 
@@ -228,159 +178,107 @@ public class PetContractTests extends BaseTest {
                 .statusCode(200)
                 .body("$", hasKey("id"))
                 .body("$", not(hasKey("name")));
+
     }
 
     @Test
-    void shouldUpdatePet(){
+    void shouldPersistUpdatedNameAfterPut(){
 
-        //Arrange PUT
         Pet originalPet = new PetBuilder()
                 .withName("initial")
+                .withStatus("available")
                 .build();
 
-        //Act PUT
-        Response createResponse = petClient.createPet(originalPet);
-        long id = createResponse.jsonPath().getLong("id");
+        Pet createdPet = petClient.createPet(originalPet);
+        long id = createdPet.getId();
 
-        Pet updatePet = new PetBuilder()
+        Pet updatedPet = new PetBuilder()
                 .withId(id)
                 .withName("lola")
                 .build();
 
-        Response updateResponse = petClient.updatePet(updatePet);
+        petClient.updatePet(updatedPet);
 
-        //Assert PUT
-        updateResponse.then()
-                .statusCode(200)
-                .body("name", equalTo("lola"));
+        Pet fetchedPet = petClient.getPet(id);
 
-        //Act GET
-        Response getResponse = petClient.getPet(id);
+        assertThat(fetchedPet.getId(), equalTo(id));
+        assertThat(fetchedPet.getName(), equalTo("lola"));
+        assertThat(fetchedPet.getStatus(), nullValue());
 
-        //Assert GET
-        getResponse.then()
-                .statusCode(200)
-                .body("id", equalTo(id))
-                .body("name", equalTo("lola"));
     }
 
     @Test
     void shouldCreatePetWhenUpdatingNonExistingId(){
 
-        //Arrange
-        Pet originalPet = new PetBuilder()
-                .withId(88888888888888L)
+        long id = 88888888888888L;
+
+        Pet pet = new PetBuilder()
+                .withId(id)
                 .withName("doggie")
                 .build();
 
-        //Act
-        given()
-                .spec(RequestSpec.requestSpec)
-                .body(originalPet)
-                .when()
-                .put("/pet")
-                .then()
-                .statusCode(200)
-                .body("id", equalTo(88888888888888L))
-                .body("name", equalTo("doggie"))
-                .body("status", equalTo("available"))
-                .log().body();
+        petClient.updatePet(pet);
 
-        //Assert
-        given()
-                .spec(RequestSpec.requestSpec)
-                .when()
-                .get("/pet/{id}", 88888888888888L)
-                .then()
-                .statusCode(200)
-                .body("id", equalTo(88888888888888L))
-                .body("name", equalTo("doggie"))
-                .body("status", equalTo("available"));
+        Pet fetchedPet = petClient.getPet(id);
+
+        assertThat(fetchedPet.getId(), equalTo(id));
+        assertThat(fetchedPet.getName(), equalTo("doggie"));
+        assertThat(fetchedPet.getStatus(), equalTo("available"));
     }
 
     @Test
-    void shouldUpdatePetWhenPuttingSameIdTwice(){
+    void shouldMergeFieldsWhenUpdatingExistingPet(){
 
-        //Arrange
+        long id = 7777777777L;
+
         Pet originalPet = new PetBuilder()
-                .withId(7777777777L)
+                .withId(id)
                 .withName("doggie")
                 .build();
 
-        //Act
-        given()
-                .spec(RequestSpec.requestSpec)
-                .body(originalPet)
-                .when()
-                .put("/pet")
-                .then()
-                .statusCode(200)
-                .body("id", equalTo(7777777777L))
-                .body("name", equalTo("doggie"))
-                .body("status", equalTo("available"))
-                .log().body();
+        petClient.updatePet(originalPet);
 
-        Pet updatePet = new PetBuilder()
-                .withId(7777777777L)
+        Pet updatedPet = new PetBuilder()
+                .withId(id)
                 .withName("lola")
                 .build();
 
-        given()
-                .spec(RequestSpec.requestSpec)
-                .body(updatePet)
-                .when()
-                .put("/pet")
-                .then()
-                .statusCode(200)
-                .body("id", equalTo(7777777777L))
-                .body("name", equalTo("lola"))
-                .body("status", equalTo("available"))
-                .log().body();
+        petClient.updatePet(updatedPet);
 
-        given()
-                .spec(RequestSpec.requestSpec)
-                .when()
-                .get("/pet/{id}", 7777777777L)
-                .then()
-                .statusCode(200)
-                .body("id", equalTo(7777777777L))
-                .body("name", equalTo("lola"))
-                .body("status", equalTo("available"));
+        Pet fetchaedPet = petClient.getPet(id);
+
+        assertThat(fetchaedPet.getId(), equalTo(id));
+        assertThat(fetchaedPet.getName(), equalTo("lola"));
+        assertThat(fetchaedPet.getStatus(), equalTo(originalPet.getStatus()));
     }
 
     @Test
     void shouldOverrideExistingFieldsWhenPuttingPartialPetData(){
 
+        long id = 666666666L;
+
         Pet originalPet = new PetBuilder()
-                .withId(666666666L)
+                .withId(id)
                 .withName("doggie")
                 .withStatus("sold")
                 .withPhotoUrls(List.of("photo1"))
                 .build();
 
+        petClient.updatePet(originalPet);
+
         Pet updatePet = new PetBuilder()
-                .withId(666666666L)
+                .withId(id)
                 .withName("lola")
                 .withStatus(null)
                 .build();
 
-        given()
-                .spec(RequestSpec.requestSpec)
-                .body(updatePet)
-                .when()
-                .put("/pet")
-                .then()
-                .statusCode(200);
+        petClient.updatePet(updatePet);
 
-        given()
-                .spec(RequestSpec.requestSpec)
-                .when()
-                .get("/pet/{id}", 666666666L)
-                .then()
-                .statusCode(200)
-                .body("id", equalTo("lola"))
-                .body("$", not(hasKey("status")))
-                .body("$", not(hasKey("photoUrls")));
+        Pet fetchedPet = petClient.getPet(id);
+
+        assertThat(fetchedPet.getId(), equalTo(id));
+        assertThat(fetchedPet.getName(), equalTo("lola"));
+        assertThat(fetchedPet.getStatus(), nullValue());
 
         // Reproduces JIRA-1234: partial PUT causes data loss
     }

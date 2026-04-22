@@ -6,6 +6,7 @@ import base.BaseTest;
 import api.PetClient;
 import api.models.Pet;
 
+import static api.models.PetBuilder.validPet;
 import static org.hamcrest.Matchers.*;
 
 import config.ResponseSpec;
@@ -126,7 +127,7 @@ public class PetTests extends BaseTest {
     void shouldCreatePetWithValidData(){
 
         // Arrange
-        Pet pet = PetBuilder.validPet();
+        Pet pet = validPet().build();
 
         // Act
         Pet created = petService.createPet(pet);

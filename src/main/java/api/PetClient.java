@@ -10,7 +10,7 @@ import io.restassured.response.Validatable;
 
 public class PetClient {
 
-    public Response createPet(Pet pet) {
+    public Response createPetRaw(Pet pet) {
         return given()
                 .spec(RequestSpec.requestSpec)
                 .body(pet)
@@ -18,11 +18,26 @@ public class PetClient {
                 .post("/pet");
     }
 
-    public Response getPet(long petId) {
+    public Pet createPet(Pet pet){
+        Response response = createPetRaw(pet);
+        response.then().statusCode(200);
+        Pet createPet = response.as(Pet.class);
+        return createPet;
+
+    }
+
+    public Response getPetRaw(long petId) {
         return given()
                 .spec(RequestSpec.requestSpec)
                 .when()
                 .get("/pet/" + petId);
+    }
+
+    public Pet getPet(long petId){
+        Response response = getPetRaw(petId);
+        response.then().statusCode(200);
+        Pet pet = response.as(Pet.class);
+        return pet;
     }
 
     public Response deletePet(long petId) {
