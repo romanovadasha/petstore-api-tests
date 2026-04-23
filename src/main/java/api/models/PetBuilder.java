@@ -1,5 +1,6 @@
 package api.models;
 
+import api.models.Tag;
 import java.net.http.HttpResponse;
 import java.util.List;
 
@@ -9,7 +10,10 @@ public class PetBuilder {
     private String name;
     private String status = "available";
     private List<String> photoUrls;
+    private boolean arePhotoUrlsSet = false;
     private boolean isNameSet = false;
+    private List<Tag> tags;
+    private boolean areTagsSet = false;
 
     public static PetBuilder validPet() {
         return new PetBuilder()
@@ -35,6 +39,13 @@ public class PetBuilder {
 
     public PetBuilder withPhotoUrls(List<String> photoUrls) {
         this.photoUrls = photoUrls;
+        this.arePhotoUrlsSet = true;
+        return this;
+    }
+
+    public PetBuilder withTags(List<Tag> tags){
+        this.tags = tags;
+        this.areTagsSet = true;
         return this;
     }
 
@@ -60,8 +71,17 @@ public class PetBuilder {
             pet.name = this.name;
         }
 
+        if (areTagsSet) {
+            pet.setTags(tags);
+        }
+
+        Tag t = new Tag(1L, "test");
+
         pet.status = this.status;
-        pet.photoUrls = this.photoUrls;
+
+        if (arePhotoUrlsSet) {
+            pet.photoUrls = this.photoUrls;
+        }
 
         return pet;
     }

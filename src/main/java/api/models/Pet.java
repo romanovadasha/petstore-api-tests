@@ -14,6 +14,7 @@ public class Pet {
     public String name;
     public String status;
     public List<String> photoUrls;
+    public List<Tag> tags;
 
     public long getId() {
         return id;
@@ -29,5 +30,13 @@ public class Pet {
 
     public List<String> getPhotoUrls() {
         return photoUrls;
+    }
+
+    public List<Tag> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<Tag> tags) {
+        this.tags = tags;
     }
 }

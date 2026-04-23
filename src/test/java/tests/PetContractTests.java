@@ -4,6 +4,7 @@ import api.models.Pet;
 import base.BaseTest;
 import api.PetClient;
 import api.models.PetBuilder;
+import api.models.Tag;
 
 import config.RequestSpec;
 import io.restassured.http.ContentType;
@@ -14,8 +15,10 @@ import java.util.List;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class PetContractTests extends BaseTest {
@@ -252,8 +255,11 @@ public class PetContractTests extends BaseTest {
         assertThat(fetchaedPet.getStatus(), equalTo(originalPet.getStatus()));
     }
 
+    @org.junit.jupiter.api.Tag("data-loss")
+    @org.junit.jupiter.api.Tag("known-issue")
     @Test
     void shouldOverrideExistingFieldsWhenPuttingPartialPetData(){
+        // Partial PUT removes fields (data loss behavior)
 
         long id = 666666666L;
 
@@ -313,8 +319,14 @@ public class PetContractTests extends BaseTest {
         assertThat(fetchedPet.getId(), equalTo(id));
     }
 
+    @org.junit.jupiter.api.Tag("known-issue")
+    @org.junit.jupiter.api.Tag("put-inconsistency")
     @Test
     void shouldKeepNameRemoveStatusAndUpdatePhotoUrlsWhenApplyingMixedPut(){
+        // Known issue: PUT behaves inconsistently across fields:
+        // - 'name' is removed when missing
+        // - 'status' is preserved when missing
+        // JIRA-1234
 
         long id = System.currentTimeMillis();
 
@@ -341,6 +353,123 @@ public class PetContractTests extends BaseTest {
         assertThat(fetchedPet.getStatus(), nullValue());
         assertThat(fetchedPet.getPhotoUrls(), equalTo(List.of("url3")));
         assertThat(fetchedPet.getId(), equalTo(id));
+
+    }
+
+    @org.junit.jupiter.api.Tag("known-issue")
+    @org.junit.jupiter.api.Tag("put-inconsistency")
+    @org.junit.jupiter.api.Tag("data-loss")
+    @Test
+    void shouldUpdateStatusRemoveNameAndPreserveOtherFieldsWhenApplyingMixedPut(){
+        // Reproduces inconsistent PUT behavior:
+        // - status is updated
+        // - name is removed when null
+        // - missing collections (photoUrls) are overwritten with empty list instead of preserved
+        // Leads to data loss on partial updates
+        //// Reproduces JIRA-1234: partial PUT causes data loss due to field-specific behavior
+
+        long id = System.currentTimeMillis();
+
+        Pet initialPet = new PetBuilder()
+                .withId(id)
+                .withName("doggie")
+                .withStatus("available")
+                .withPhotoUrls(List.of("url4"))
+                .build();
+
+        Pet createdPet = petClient.createPet(initialPet);
+
+        Pet updatedPet = new PetBuilder()
+                .withId(id)
+                .withName(null)
+                .withStatus("sold")
+                .build();
+
+        petClient.updatePet(updatedPet);
+
+        Pet fetchedPet = petClient.getPet(id);
+
+        System.out.println(fetchedPet);
+
+        assertThat(fetchedPet.getPhotoUrls(), empty());
+        assertThat(fetchedPet.getStatus(), equalTo("sold"));
+        assertThat(fetchedPet.getName(), nullValue());
+        assertThat(fetchedPet.getId(), equalTo(id));
+
+    }
+
+    @Test
+    void shouldExhibitFieldSpecificInconsistentBehaviorOnPartialPut(){
+
+        long id = System.currentTimeMillis();
+
+        Pet initialPet = new PetBuilder()
+                .withId(id)
+                .withName("doggie")
+                .withStatus("available")
+                .withPhotoUrls(List.of("url4"))
+                .build();
+
+        Pet createdPet = petClient.createPet(initialPet);
+
+        Pet updatedPet = new PetBuilder()
+                .withId(id)
+                .withName(null)
+                .withStatus("sold")
+                .build();
+
+        petClient.updatePet(updatedPet);
+
+        Pet fetchedPet = petClient.getPet(id);
+
+        assertAll(
+                () -> assertThat(fetchedPet.getStatus(), equalTo("sold")),
+                () -> assertThat(fetchedPet.getName(), nullValue()),
+                () -> assertThat(fetchedPet.getPhotoUrls(), empty()),
+                () -> assertThat(fetchedPet.getId(), equalTo(id))
+        );
+    }
+
+    @org.junit.jupiter.api.Tag("known-issue")
+    @org.junit.jupiter.api.Tag("put-inconsistency")
+    @org.junit.jupiter.api.Tag("data-loss")
+    @org.junit.jupiter.api.Tag("collection-overwrite")
+    @Test
+    void shouldOverwriteMissingListFieldsWithEmptyListOnPartialPut(){
+        // Reproduces field-type dependent PUT behavior:
+        // - Strings: null removes, missing may preserve
+        // - Lists: missing overwrites with empty list
+        // Leads to data loss for collection fields
+
+        long id = System.currentTimeMillis();
+
+        Pet initialPet = new PetBuilder()
+                .withId(id)
+                .withName("doggie")
+                .withStatus("available")
+                .withPhotoUrls(List.of("url4"))
+                .withTags(List.of(new Tag(1L, "cute")))
+                .build();
+
+        petClient.createPet(initialPet);
+
+        Pet updatedPet = new PetBuilder()
+                .withId(id)
+                .withStatus("sold")
+                .withName(null)
+                .build();
+
+        petClient.updatePet(updatedPet);
+
+        Pet fetchedPet = petClient.getPet(id);
+
+        assertAll(
+                () -> assertThat(fetchedPet.getStatus(), equalTo("sold")),
+                () -> assertThat(fetchedPet.getName(), nullValue()),
+                () -> assertThat(fetchedPet.getPhotoUrls(), empty()),
+                () -> assertThat(fetchedPet.getTags(), empty()),
+                () -> assertThat(fetchedPet.getId(), equalTo(id))
+        );
 
     }
 }
