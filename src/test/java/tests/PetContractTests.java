@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static io.restassured.RestAssured.enableLoggingOfRequestAndResponseIfValidationFails;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.nullValue;
@@ -469,6 +470,89 @@ public class PetContractTests extends BaseTest {
                 () -> assertThat(fetchedPet.getPhotoUrls(), empty()),
                 () -> assertThat(fetchedPet.getTags(), empty()),
                 () -> assertThat(fetchedPet.getId(), equalTo(id))
+        );
+    }
+
+    //PUT is idempotent but applies destructive field-type-specific logic (data loss for collections)
+    @Test
+    void shouldBeIdempotentWhenApplyingSamePutTwice(){
+
+        Pet initialPet = new PetBuilder()
+                .withName("doggie")
+                .withStatus("available")
+                .withPhotoUrls(List.of("url5"))
+                .withTags(List.of(new Tag(2L, "puppy")))
+                .build();
+
+        Pet createdPet = petClient.createPet(initialPet);
+
+        long id = createdPet.getId();
+
+        Pet updatePet = new PetBuilder()
+                .withId(id)
+                .withName(null)
+                .withStatus("sold")
+                .build();
+
+        petClient.updatePet(updatePet);
+
+        Pet afterFirstUpdate = petClient.getPet(id);
+
+        petClient.updatePet(updatePet);
+
+        Pet afterSecondUpdate = petClient.getPet(id);
+
+        assertThat(afterFirstUpdate.getStatus(), equalTo("sold"));
+        assertAll(
+                () -> assertThat(afterSecondUpdate.getName(), equalTo(afterFirstUpdate.getName())),
+                () -> assertThat(afterSecondUpdate.getStatus(), equalTo(afterFirstUpdate.getStatus())),
+                () -> assertThat(afterSecondUpdate.getTags(), equalTo(afterFirstUpdate.getTags())),
+                () -> assertThat(afterSecondUpdate.getPhotoUrls(), equalTo(afterFirstUpdate.getPhotoUrls())),
+                () -> assertThat(afterSecondUpdate.getId(), equalTo(afterFirstUpdate.getId()))
+        );
+    }
+
+    @Test
+    void shouldDifferentiateBetweenEmptyAndMissingPhotoUrlsOnPut(){
+
+        Pet initialPetForEmpty = new PetBuilder()
+                .withName("doggie")
+                .withStatus("available")
+                .withPhotoUrls(List.of("url6"))
+                .build();
+
+        Pet createdEmptyPet = petClient.createPet(initialPetForEmpty);
+        long idEmpty = createdEmptyPet.getId();
+
+        Pet updateEmptyPet = new PetBuilder()
+                .withId(idEmpty)
+                .withPhotoUrls(List.of())
+                .build();
+
+        petClient.updatePet(updateEmptyPet);
+
+        Pet afterEmptyUpdate = petClient.getPet(idEmpty);
+
+        Pet initialPetForMissing = new PetBuilder()
+                .withName("lola")
+                .withStatus("available")
+                .withPhotoUrls(List.of("url7"))
+                .build();
+
+        Pet createdMissingPet = petClient.createPet(initialPetForMissing);
+        long idMissing = createdMissingPet.getId();
+
+        Pet updateMissingPet = new PetBuilder()
+                .withId(idMissing)
+                .build();
+
+        petClient.updatePet(updateMissingPet);
+        Pet afterMissingUpdate = petClient.getPet(idMissing);
+
+        assertThat(initialPetForMissing.getPhotoUrls(), not(empty()));
+        assertAll(
+                () -> assertThat(afterEmptyUpdate.getPhotoUrls(), empty()),
+                () -> assertThat(afterMissingUpdate.getPhotoUrls(), empty())
         );
 
     }
