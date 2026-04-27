@@ -555,5 +555,6 @@ public class PetContractTests extends BaseTest {
                 () -> assertThat(afterMissingUpdate.getPhotoUrls(), empty())
         );
 
+
     }
 }
