@@ -28,6 +28,8 @@ public class PetTests extends BaseTest {
 
     private PetService petService = new PetService();
 
+    private PetClient petClient = new PetClient();
+
 
     @Test
     void shouldCreatePet() {
@@ -143,6 +145,35 @@ public class PetTests extends BaseTest {
 
         assertEquals(pet.name, fetched.name);
         assertEquals(pet.status, fetched.status);
+
+    }
+
+    @Test
+    void shouldDeletePetAndMakeItUnavailable() {
+
+        //Arrange
+        Pet pet = validPet().build();
+
+        //Act
+        Pet created = petService.createPet(pet);
+        long id = created.id;
+
+        createdPetIds.add(id);
+
+        Response deleteResponse = petClient.deletePet(id);
+
+        Response deletedPetResponse = petClient.getPetRaw(id);
+
+        String message = deletedPetResponse.jsonPath().getString("message");
+
+        if(deleteResponse.statusCode() == 200){
+            createdPetIds.remove(Long.valueOf(id));
+        }
+
+        //Asserts
+        assertEquals(200 ,deleteResponse.statusCode());
+        assertEquals(404, deletedPetResponse.statusCode());
+        assertEquals("Pet not found", message);
 
     }
 
