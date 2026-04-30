@@ -184,4 +184,19 @@ public class PetTests extends BaseTest {
         }
         createdPetIds.clear();
     }
+
+    @Test
+    void shouldReturnNotFoundUponRequestNonExistentPetId(){
+
+        //Arrange
+        long nonExistingId = 9999999999L;
+
+        //Act
+        Response getResponse = petClient.getPetRaw(nonExistingId);
+        String message = getResponse.jsonPath().getString("message");
+
+        //Asserts
+        assertEquals(404, getResponse.statusCode());
+        assertEquals("Pet not found", message);
+    }
 }
