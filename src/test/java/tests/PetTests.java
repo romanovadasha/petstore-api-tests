@@ -177,14 +177,6 @@ public class PetTests extends BaseTest {
 
     }
 
-    @AfterEach
-    void cleanup() {
-        for (Long id : createdPetIds) {
-            petService.deletePet(id);
-        }
-        createdPetIds.clear();
-    }
-
     @Test
     void shouldReturnNotFoundUponRequestNonExistentPetId(){
 
@@ -198,5 +190,47 @@ public class PetTests extends BaseTest {
         //Asserts
         assertEquals(404, getResponse.statusCode());
         assertEquals("Pet not found", message);
+    }
+
+    @Test
+    void shouldUpdatePetAndReturnModifiedPet(){
+
+        long id = System.currentTimeMillis();
+
+        //Arrange
+        Pet initialPet = new PetBuilder()
+                .withId(id)
+                .withName("bobby")
+                .withStatus("available")
+                .build();
+
+        Pet created = petService.createPet(initialPet);
+        createdPetIds.add(created.id);
+
+        //Act
+        Pet updatePet = new PetBuilder()
+                .withId(id)
+                .withName("popy")
+                .withStatus("sold")
+                .build();
+
+        Response updateResponse = petClient.updatePet(updatePet);
+
+        Pet fetched = petService.getPetById(id);
+
+        //Asserts
+        assertEquals(200, updateResponse.statusCode());
+        assertEquals("popy", fetched.getName());
+        assertEquals("sold", fetched.getStatus());
+        assertEquals(id, fetched.getId());
+
+    }
+
+    @AfterEach
+    void cleanup() {
+        for (Long id : createdPetIds) {
+            petService.deletePet(id);
+        }
+        createdPetIds.clear();
     }
 }
