@@ -3,9 +3,6 @@ package service;
 import api.PetClient;
 import api.models.Pet;
 import api.models.PetBuilder;
-import config.RequestSpec;
-
-import static io.restassured.RestAssured.given;
 
 public class PetService {
 

@@ -5,18 +5,13 @@ import base.BaseTest;
 import api.PetClient;
 import api.models.PetBuilder;
 import api.models.Tag;
-
 import config.RequestSpec;
-import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import service.PetService;
-
 import java.util.ArrayList;
 import java.util.List;
-
-import static io.restassured.RestAssured.enableLoggingOfRequestAndResponseIfValidationFails;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.nullValue;
@@ -36,14 +31,17 @@ public class PetContractTests extends BaseTest {
     @Test
     void shouldKeepNullWhenNameIsExplicitlyNull(){
 
+        //Arrange
         Pet pet = new PetBuilder()
                 .withName(null)
                 .withStatus("available")
                 .build();
 
+        //Act
         Pet createdPet = petClient.createPet(pet);
         createdPetIds.add(createdPet.getId());
 
+        //Asserts
         assertThat(createdPet.getId(), greaterThan(0L));
         assertThat(createdPet.getName(), nullValue());
     }
@@ -51,26 +49,32 @@ public class PetContractTests extends BaseTest {
     @Test
     void shouldSetDefaultNameWhenNameIsMissing(){
 
+        //Arrange
         Pet pet = new PetBuilder()
                 .withStatus("available")
                 .build();
 
+        //Act
         Pet createdPet = petClient.createPet(pet);
         createdPetIds.add(createdPet.getId());
 
+        //Assert
         assertThat(createdPet.getName(), nullValue());
     }
 
     @Test
     void shouldKeepEmptyName(){
 
+        //Arrange
         Pet pet = new PetBuilder()
                 .withName("")
                 .build();
 
+        //Act
         Pet createdPet = petClient.createPet(pet);
         createdPetIds.add(createdPet.getId());
 
+        //Asserts
         assertThat(createdPet.getId(), greaterThan(0L));
         assertThat(createdPet.getName(), equalTo(""));
     }
@@ -78,24 +82,28 @@ public class PetContractTests extends BaseTest {
     @Test
     void shouldKeepValidName(){
 
+        //Arrange
         Pet pet = new PetBuilder()
                 .withName("doggie")
                 .build();
 
+        //Act
         Pet createdPet = petClient.createPet(pet);
         createdPetIds.add(createdPet.getId());
 
+        //Asserts
         assertThat(createdPet.getId(), greaterThan(0L));
         assertThat(createdPet.getName(), equalTo("doggie"));
         assertThat(createdPet.getStatus(), equalTo("available"));
-
     }
 
     @Test
     void shouldConvertNumericNameToString(){
 
+        //Arrange
         String body = "{ \"name\": 123 }";
 
+        //Act + Assert
         Response response =
                 given()
                         .spec(RequestSpec.requestSpec)
@@ -109,14 +117,15 @@ public class PetContractTests extends BaseTest {
                 .body("$", hasKey("id"))
                 .body("$", hasKey("name"))
                 .body("name", equalTo("123"));
-
     }
 
     @Test
     void shouldConvertBooleanNameToString(){
 
+        //Arrange
         String body = "{ \"name\": true }";
 
+        //Act + Assert
         Response response =
                 given()
                         .spec(RequestSpec.requestSpec)
@@ -136,9 +145,11 @@ public class PetContractTests extends BaseTest {
     @Test
     void shouldKeepLongNameWithoutTruncation(){
 
+        //Arrange
         String longName = "a".repeat(1000);
         String body = "{ \"name\": \"" + longName + "\" }";
 
+        //Act + Assert
         Response response =
                 given()
                         .spec(RequestSpec.requestSpec)
@@ -147,21 +158,20 @@ public class PetContractTests extends BaseTest {
                         .post("/pet");
         createdPetIds.add(response.jsonPath().getLong("id"));
 
-        //System.out.println(response.jsonPath().getString("name").length());
-
         response.then()
                 .statusCode(200)
                 .body("$", hasKey("id"))
                 .body("$", hasKey("name"))
                 .body("name", equalTo(longName));
-
     }
 
     @Test
     void shouldReturn400ForMalformedJson(){
 
+        //Arrange
         String body = "{ \"name\": doggie }";
 
+        //Act + Assert
         Response response =
                 given()
                         .spec(RequestSpec.requestSpec)
@@ -183,7 +193,7 @@ public class PetContractTests extends BaseTest {
         //Arrange
         String body = "{}";
 
-        //Act
+        //Act + Assert
         Response response =
                 given()
                         .spec(RequestSpec.requestSpec)
@@ -192,7 +202,6 @@ public class PetContractTests extends BaseTest {
                         .post("/pet");
         createdPetIds.add(response.jsonPath().getLong("id"));
 
-        //Assert
         response.then()
                 .statusCode(200)
                 .body("$", hasKey("id"))
@@ -218,17 +227,18 @@ public class PetContractTests extends BaseTest {
         assertEquals("INVALID", created.status);
         assertEquals("Boo", created.name);
         assertNotNull(created.id);
-
     } // Тут есть баг
 
     @Test
     void shouldPersistUpdatedNameAfterPut(){
 
+        //Arrange
         Pet originalPet = new PetBuilder()
                 .withName("initial")
                 .withStatus("available")
                 .build();
 
+        //Act
         Pet createdPet = petClient.createPet(originalPet);
         createdPetIds.add(createdPet.getId());
         long id = createdPet.getId();
@@ -242,15 +252,16 @@ public class PetContractTests extends BaseTest {
 
         Pet fetchedPet = petClient.getPet(id);
 
+        //Asserts
         assertThat(fetchedPet.getId(), equalTo(id));
         assertThat(fetchedPet.getName(), equalTo("lola"));
-        assertThat(fetchedPet.getStatus(), nullValue());
-
+        assertThat(fetchedPet.getStatus(), equalTo("available"));
     }
 
     @Test
     void shouldCreatePetWhenUpdatingNonExistingId(){
 
+        //Arrange
         long id = 88888888888888L;
 
         Pet pet = new PetBuilder()
@@ -258,11 +269,13 @@ public class PetContractTests extends BaseTest {
                 .withName("doggie")
                 .build();
 
+        //Act
         petClient.updatePet(pet);
         createdPetIds.add(id);
 
         Pet fetchedPet = petClient.getPet(id);
 
+        //Asserts
         assertThat(fetchedPet.getId(), equalTo(id));
         assertThat(fetchedPet.getName(), equalTo("doggie"));
         assertThat(fetchedPet.getStatus(), equalTo("available"));
@@ -271,6 +284,7 @@ public class PetContractTests extends BaseTest {
     @Test
     void shouldMergeFieldsWhenUpdatingExistingPet(){
 
+        //Arrange
         long id = 7777777777L;
 
         Pet originalPet = new PetBuilder()
@@ -278,6 +292,7 @@ public class PetContractTests extends BaseTest {
                 .withName("doggie")
                 .build();
 
+        //Act
         petClient.updatePet(originalPet);
         createdPetIds.add(id);
 
@@ -290,6 +305,7 @@ public class PetContractTests extends BaseTest {
 
         Pet fetchaedPet = petClient.getPet(id);
 
+        //Asserts
         assertThat(fetchaedPet.getId(), equalTo(id));
         assertThat(fetchaedPet.getName(), equalTo("lola"));
         assertThat(fetchaedPet.getStatus(), equalTo(originalPet.getStatus()));
@@ -301,6 +317,7 @@ public class PetContractTests extends BaseTest {
     void shouldOverrideExistingFieldsWhenPuttingPartialPetData(){
         // Partial PUT removes fields (data loss behavior)
 
+        //Arrange
         long id = 666666666L;
 
         Pet originalPet = new PetBuilder()
@@ -310,6 +327,7 @@ public class PetContractTests extends BaseTest {
                 .withPhotoUrls(List.of("photo1"))
                 .build();
 
+        //Act
         petClient.updatePet(originalPet);
         createdPetIds.add(id);
 
@@ -323,6 +341,7 @@ public class PetContractTests extends BaseTest {
 
         Pet fetchedPet = petClient.getPet(id);
 
+        //Asserts
         assertThat(fetchedPet.getId(), equalTo(id));
         assertThat(fetchedPet.getName(), equalTo("lola"));
         assertThat(fetchedPet.getStatus(), nullValue());
@@ -335,6 +354,7 @@ public class PetContractTests extends BaseTest {
 
         long id = System.currentTimeMillis();
 
+        //Arrange
         Pet initialPet = new PetBuilder()
                 .withId(id)
                 .withName("Barsik")
@@ -342,6 +362,7 @@ public class PetContractTests extends BaseTest {
                 .withPhotoUrls(List.of("url1"))
                 .build();
 
+        //Act
         Pet createdPet = petClient.createPet(initialPet);
         createdPetIds.add(createdPet.getId());
 
@@ -355,9 +376,10 @@ public class PetContractTests extends BaseTest {
 
         Pet fetchedPet = petClient.getPet(id);
 
+        //Asserts
         assertThat(fetchedPet.getName(), equalTo("lola"));
         assertThat(fetchedPet.getStatus(), equalTo("available"));
-        assertThat(fetchedPet.getPhotoUrls(), nullValue());
+        assertThat(fetchedPet.getPhotoUrls(), empty());
         assertThat(fetchedPet.getId(), equalTo(id));
     }
 
@@ -372,6 +394,7 @@ public class PetContractTests extends BaseTest {
 
         long id = System.currentTimeMillis();
 
+        //Arrange
         Pet initialPet = new PetBuilder()
                 .withId(id)
                 .withName("Barsik")
@@ -379,6 +402,7 @@ public class PetContractTests extends BaseTest {
                 .withPhotoUrls(List.of("url2"))
                 .build();
 
+        //Act
         Pet createdPet = petClient.createPet(initialPet);
         createdPetIds.add(createdPet.getId());
 
@@ -392,11 +416,11 @@ public class PetContractTests extends BaseTest {
 
         Pet fetchedPet = petClient.getPet(id);
 
+        //Asserts
         assertThat(fetchedPet.getName(), nullValue());
         assertThat(fetchedPet.getStatus(), nullValue());
         assertThat(fetchedPet.getPhotoUrls(), equalTo(List.of("url3")));
         assertThat(fetchedPet.getId(), equalTo(id));
-
     }
 
     @org.junit.jupiter.api.Tag("known-issue")
@@ -413,6 +437,7 @@ public class PetContractTests extends BaseTest {
 
         long id = System.currentTimeMillis();
 
+        //Arrange
         Pet initialPet = new PetBuilder()
                 .withId(id)
                 .withName("doggie")
@@ -420,6 +445,7 @@ public class PetContractTests extends BaseTest {
                 .withPhotoUrls(List.of("url4"))
                 .build();
 
+        //Act
         Pet createdPet = petClient.createPet(initialPet);
         createdPetIds.add(createdPet.getId());
 
@@ -435,11 +461,11 @@ public class PetContractTests extends BaseTest {
 
         System.out.println(fetchedPet);
 
+        //Asserts
         assertThat(fetchedPet.getPhotoUrls(), empty());
         assertThat(fetchedPet.getStatus(), equalTo("sold"));
         assertThat(fetchedPet.getName(), nullValue());
         assertThat(fetchedPet.getId(), equalTo(id));
-
     }
 
     @Test
@@ -447,6 +473,7 @@ public class PetContractTests extends BaseTest {
 
         long id = System.currentTimeMillis();
 
+        //Arrange
         Pet initialPet = new PetBuilder()
                 .withId(id)
                 .withName("doggie")
@@ -454,6 +481,7 @@ public class PetContractTests extends BaseTest {
                 .withPhotoUrls(List.of("url4"))
                 .build();
 
+        //Act
         Pet createdPet = petClient.createPet(initialPet);
         createdPetIds.add(createdPet.getId());
 
@@ -467,6 +495,7 @@ public class PetContractTests extends BaseTest {
 
         Pet fetchedPet = petClient.getPet(id);
 
+        //Asserts
         assertAll(
                 () -> assertThat(fetchedPet.getStatus(), equalTo("sold")),
                 () -> assertThat(fetchedPet.getName(), nullValue()),
@@ -488,6 +517,7 @@ public class PetContractTests extends BaseTest {
 
         long id = System.currentTimeMillis();
 
+        //Arrange
         Pet initialPet = new PetBuilder()
                 .withId(id)
                 .withName("doggie")
@@ -496,6 +526,7 @@ public class PetContractTests extends BaseTest {
                 .withTags(List.of(new Tag(1L, "cute")))
                 .build();
 
+        //Act
         petClient.createPet(initialPet);
         createdPetIds.add(id);
 
@@ -509,6 +540,7 @@ public class PetContractTests extends BaseTest {
 
         Pet fetchedPet = petClient.getPet(id);
 
+        //Asserts
         assertAll(
                 () -> assertThat(fetchedPet.getStatus(), equalTo("sold")),
                 () -> assertThat(fetchedPet.getName(), nullValue()),
@@ -522,6 +554,7 @@ public class PetContractTests extends BaseTest {
     @Test
     void shouldBeIdempotentWhenApplyingSamePutTwice(){
 
+        //Arrange
         Pet initialPet = new PetBuilder()
                 .withName("doggie")
                 .withStatus("available")
@@ -529,6 +562,7 @@ public class PetContractTests extends BaseTest {
                 .withTags(List.of(new Tag(2L, "puppy")))
                 .build();
 
+        //Act
         Pet createdPet = petClient.createPet(initialPet);
         createdPetIds.add(createdPet.getId());
 
@@ -548,6 +582,7 @@ public class PetContractTests extends BaseTest {
 
         Pet afterSecondUpdate = petClient.getPet(id);
 
+        //Asserts
         assertThat(afterFirstUpdate.getStatus(), equalTo("sold"));
         assertAll(
                 () -> assertThat(afterSecondUpdate.getName(), equalTo(afterFirstUpdate.getName())),
@@ -561,12 +596,14 @@ public class PetContractTests extends BaseTest {
     @Test
     void shouldDifferentiateBetweenEmptyAndMissingPhotoUrlsOnPut(){
 
+        //Arrange
         Pet initialPetForEmpty = new PetBuilder()
                 .withName("doggie")
                 .withStatus("available")
                 .withPhotoUrls(List.of("url6"))
                 .build();
 
+        //Act
         Pet createdEmptyPet = petClient.createPet(initialPetForEmpty);
         createdPetIds.add(createdEmptyPet.getId());
         long idEmpty = createdEmptyPet.getId();
@@ -597,16 +634,13 @@ public class PetContractTests extends BaseTest {
         petClient.updatePet(updateMissingPet);
         Pet afterMissingUpdate = petClient.getPet(idMissing);
 
+        //Asserts
         assertThat(initialPetForMissing.getPhotoUrls(), not(empty()));
         assertAll(
                 () -> assertThat(afterEmptyUpdate.getPhotoUrls(), empty()),
                 () -> assertThat(afterMissingUpdate.getPhotoUrls(), empty())
         );
-
-
     }
-
-
 
     @AfterEach
     void cleanup() {

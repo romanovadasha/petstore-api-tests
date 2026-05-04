@@ -1,7 +1,5 @@
 package api.models;
 
-import api.models.Tag;
-import java.net.http.HttpResponse;
 import java.util.List;
 
 public class PetBuilder {
@@ -59,13 +57,9 @@ public class PetBuilder {
 
         Pet pet = new Pet();
 
-        //pet.id = this.id;
-
         if (id != null){
             pet.id = id;
         }
-
-        //pet.name = this.name;
 
         if (isNameSet){
             pet.name = this.name;
@@ -74,8 +68,6 @@ public class PetBuilder {
         if (areTagsSet) {
             pet.setTags(tags);
         }
-
-        Tag t = new Tag(1L, "test");
 
         pet.status = this.status;
 

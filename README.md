@@ -31,10 +31,12 @@ This project demonstrates API test automation for Petstore service, including:
 
 ## Features
 
-- Separation of concerns (client / service / tests)
-- Reusable request and response specifications
-- Builder pattern for test data creation
-- Clean and maintainable test structure
+- Layered architecture (API Client, Business Logic, Tests)
+- Full CRUD coverage (Create, Read, Update, Delete)
+- Positive and negative test scenarios (validation, 404 handling)
+- Automated data cleanup after test execution
+- Builder pattern for flexible test data generation
+- Contract tests to verify specific API behaviors
 
 ## How to Run
 

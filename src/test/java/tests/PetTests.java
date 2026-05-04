@@ -7,9 +7,6 @@ import api.PetClient;
 import api.models.Pet;
 
 import static api.models.PetBuilder.validPet;
-import static org.hamcrest.Matchers.*;
-
-import config.ResponseSpec;
 
 import io.restassured.response.Response;
 import org.junit.jupiter.api.AfterEach;

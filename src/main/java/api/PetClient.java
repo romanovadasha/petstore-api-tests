@@ -5,8 +5,6 @@ import io.restassured.response.Response;
 
 import static io.restassured.RestAssured.given;
 import config.RequestSpec;
-import io.restassured.http.ContentType;
-import io.restassured.response.Validatable;
 
 public class PetClient {
 
