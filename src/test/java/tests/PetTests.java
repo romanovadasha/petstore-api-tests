@@ -31,27 +31,6 @@ public class PetTests extends BaseTest {
     private PetClient petClient = new PetClient();
 
     @Test
-    void shouldAcceptInvalidStatus(){
-
-        // Arrange
-        Pet pet = new PetBuilder()
-                .withId(System.currentTimeMillis())
-                .withStatus("INVALID")
-                .withName("Boo")
-                .build();
-
-        // Act
-        Pet created = petService.createPet(pet);
-        createdPetIds.add(created.id);
-
-        // Assert
-        assertEquals("INVALID", created.status);
-        assertEquals("Boo", created.name);
-        assertNotNull(created.id);
-
-    } // Тут есть баг
-
-    @Test
     void shouldCreatePetWithValidData(){
 
         // Arrange
