@@ -132,6 +132,20 @@ public class PetTests extends BaseTest {
 
     }
 
+    @Test
+    void shouldReturn404WhenDeletingNonExistingPet(){
+
+        //Arrange
+        long nonExistingId = 3333333333L;
+
+        //Act
+        Response deleteResponse = petClient.deletePet(nonExistingId);
+
+        //Assert
+        assertEquals(404, deleteResponse.statusCode());
+
+    }
+
     @AfterEach
     void cleanup() {
         for (Long id : createdPetIds) {
