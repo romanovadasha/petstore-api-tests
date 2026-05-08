@@ -1,3 +1,4 @@
+[![Petstore API Tests](https://github.com/romanovadasha/petstore-api-tests/actions/workflows/pet-tests.yml/badge.svg)](https://github.com/romanovadasha/petstore-api-tests/actions/workflows/pet-tests.yml)
 # Petstore API Tests
 
 REST API test automation framework for Petstore built with Java, RestAssured and JUnit.
