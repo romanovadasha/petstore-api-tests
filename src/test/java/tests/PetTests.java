@@ -52,7 +52,7 @@ public class PetTests extends BaseTest {
     }
 
     @Test
-    void shouldDeletePetAndMakeItUnavailable() {
+    void shouldDeletePetAndMakeItUnavailable() throws InterruptedException {
 
         //Arrange
         Pet pet = validPet().build();
@@ -64,6 +64,8 @@ public class PetTests extends BaseTest {
         createdPetIds.add(id);
 
         Response deleteResponse = petClient.deletePet(id);
+
+        Thread.sleep(500);
 
         Response deletedPetResponse = petClient.getPetRaw(id);
 
