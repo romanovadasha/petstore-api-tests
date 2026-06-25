@@ -28,4 +28,25 @@ public class StoreClient {
                 .when()
                 .post("/store/order/");
     }
+
+    public Response getRawOrder(long orderID){
+        return given()
+                .spec(RequestSpec.requestSpec)
+                .when()
+                .get("/store/order/" + orderID);
+    }
+
+    public  Order getOrder(long orderID){
+        Response response = getRawOrder(orderID);
+        response.then().statusCode(200);
+        Order order = response.as(Order.class);
+        return order;
+    }
+
+    public Response deleteOrderRaw(long orderID){
+        return given()
+                .spec(RequestSpec.requestSpec)
+                .when()
+                .delete("/store/order/" + orderID);
+    }
 }
